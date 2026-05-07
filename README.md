@@ -25,6 +25,15 @@ npm run dev
 
 Open `http://localhost:3000/login`.
 
+## Operational Pages
+
+After signing in, the protected app consumes the backend Stage 4 APIs:
+
+- `/staff` - list, create, and delete staff records
+- `/clients` - list, create, and delete client records
+- `/visits` - list, create, and delete visit records
+- `/incidents` - list and create incident records
+
 ## Scripts
 
 - `npm run dev` - start the Next.js dev server

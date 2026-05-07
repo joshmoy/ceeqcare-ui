@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { useAuth } from '@/features/auth/auth-provider';
+import { AppNav } from '@/features/operations/app-nav';
 
 export default function DashboardPage() {
   return (
@@ -16,25 +17,7 @@ function DashboardContent() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
-              CareSight AI
-            </p>
-            <h1 className="text-xl font-semibold text-slate-950">
-              Operations Dashboard
-            </h1>
-          </div>
-          <button
-            onClick={auth.logout}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            type="button"
-          >
-            Sign out
-          </button>
-        </div>
-      </nav>
+      <AppNav />
 
       <section className="mx-auto grid max-w-6xl gap-6 px-6 py-10 lg:grid-cols-3">
         <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
@@ -51,13 +34,15 @@ function DashboardContent() {
         </article>
 
         <article className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
-          <p className="text-sm font-semibold text-blue-700">Auth scaffold</p>
+          <p className="text-sm font-semibold text-blue-700">
+            Stage 4 endpoints
+          </p>
           <h2 className="mt-3 text-xl font-semibold text-slate-950">
-            Connected to backend auth
+            Operational APIs connected
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-700">
-            This page is protected by the frontend session provider and calls
-            `GET /auth/me` using the stored JWT bearer token.
+            Use the navigation above to manage staff, clients, visits, and
+            incidents using the backend JWT and agency-scoped APIs.
           </p>
         </article>
       </section>

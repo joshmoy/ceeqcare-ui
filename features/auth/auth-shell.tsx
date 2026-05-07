@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 
-import { ApiError } from './auth-api';
+import { ApiError } from '@/lib/api-client';
+
 import { useAuth } from './auth-provider';
 
 type Mode = 'login' | 'register';
