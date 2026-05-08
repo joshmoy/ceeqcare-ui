@@ -27,12 +27,14 @@ Open `http://localhost:3000/login`.
 
 ## Operational Pages
 
-After signing in, the protected app consumes the backend Stage 4 APIs:
+After signing in, the protected app consumes the backend APIs:
 
 - `/staff` - list, create, and delete staff records
 - `/clients` - list, create, and delete client records
 - `/visits` - list, create, and delete visit records
 - `/incidents` - list and create incident records
+- `/risk` - view risk dashboard metrics and trigger recalculation
+- `/compliance` - view compliance reports and download CSV exports
 
 ## Scripts
 

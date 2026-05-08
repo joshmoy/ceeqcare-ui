@@ -35,14 +35,15 @@ function DashboardContent() {
 
         <article className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
           <p className="text-sm font-semibold text-blue-700">
-            Stage 4 endpoints
+            Intelligence endpoints
           </p>
           <h2 className="mt-3 text-xl font-semibold text-slate-950">
             Operational APIs connected
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-700">
-            Use the navigation above to manage staff, clients, visits, and
-            incidents using the backend JWT and agency-scoped APIs.
+            Use the navigation above to manage operational records, review risk
+            scoring, and export compliance reports using the backend JWT and
+            agency-scoped APIs.
           </p>
         </article>
       </section>

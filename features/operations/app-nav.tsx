@@ -11,6 +11,8 @@ const navItems = [
   { href: '/clients', label: 'Clients' },
   { href: '/visits', label: 'Visits' },
   { href: '/incidents', label: 'Incidents' },
+  { href: '/risk', label: 'Risk' },
+  { href: '/compliance', label: 'Compliance' },
 ];
 
 export function AppNav() {

@@ -12,9 +12,9 @@ import {
   Visit,
 } from './types';
 
-type ListParams = Record<string, string | number | boolean | undefined>;
+export type ListParams = Record<string, string | number | boolean | undefined>;
 
-function withQuery(path: string, params: ListParams = {}) {
+export function withQuery(path: string, params: ListParams = {}) {
   const query = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {

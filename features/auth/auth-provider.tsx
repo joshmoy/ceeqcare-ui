@@ -6,13 +6,14 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from 'react';
 
 import { getMe, login, registerAgency } from './auth-api';
 import {
   clearStoredAccessToken,
   getStoredAccessToken,
+  subscribeToStoredAccessToken,
   storeAccessToken,
 } from './token-storage';
 import { AuthUser, LoginInput, RegisterAgencyInput } from './types';
@@ -31,8 +32,10 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
-    getStoredAccessToken(),
+  const accessToken = useSyncExternalStore(
+    subscribeToStoredAccessToken,
+    getStoredAccessToken,
+    () => null,
   );
 
   const meQuery = useQuery({
@@ -45,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mutationFn: login,
     onSuccess: (response) => {
       storeAccessToken(response.accessToken);
-      setAccessToken(response.accessToken);
       queryClient.setQueryData(['auth', 'me', response.accessToken], response.user);
     },
   });
@@ -54,14 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mutationFn: registerAgency,
     onSuccess: (response) => {
       storeAccessToken(response.accessToken);
-      setAccessToken(response.accessToken);
       queryClient.setQueryData(['auth', 'me', response.accessToken], response.user);
     },
   });
 
   const logout = useCallback(() => {
     clearStoredAccessToken();
-    setAccessToken(null);
     queryClient.removeQueries({ queryKey: ['auth'] });
   }, [queryClient]);
 
