@@ -9,22 +9,44 @@ import {
   useSyncExternalStore,
 } from 'react';
 
-import { getMe, login, registerAgency } from './auth-api';
+import {
+  confirmMfaEnrollment,
+  getMe,
+  login,
+  registerAgency,
+  regenerateMfaRecoveryCodes,
+  startMfaEnrollment,
+  verifyMfaLogin,
+} from './auth-api';
 import {
   clearStoredAccessToken,
   getStoredAccessToken,
   subscribeToStoredAccessToken,
   storeAccessToken,
 } from './token-storage';
-import { AuthUser, LoginInput, RegisterAgencyInput } from './types';
+import {
+  AuthUser,
+  ConfirmMfaInput,
+  LoginInput,
+  LoginResponse,
+  MfaChallengeResponse,
+  MfaEnrollment,
+  MfaRecoveryCodes,
+  RegisterAgencyInput,
+  VerifyMfaLoginInput,
+} from './types';
 
 type AuthContextValue = {
   accessToken: string | null;
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (input: LoginInput) => Promise<void>;
+  login: (input: LoginInput) => Promise<LoginResponse>;
+  verifyMfaLogin: (input: VerifyMfaLoginInput) => Promise<void>;
   registerAgency: (input: RegisterAgencyInput) => Promise<void>;
+  startMfaEnrollment: () => Promise<MfaEnrollment>;
+  confirmMfaEnrollment: (input: ConfirmMfaInput) => Promise<MfaRecoveryCodes>;
+  regenerateMfaRecoveryCodes: () => Promise<MfaRecoveryCodes>;
   logout: () => void;
 };
 
@@ -46,6 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: login,
+    onSuccess: (response) => {
+      if (isMfaChallengeResponse(response)) {
+        return;
+      }
+
+      storeAccessToken(response.accessToken);
+      queryClient.setQueryData(['auth', 'me', response.accessToken], response.user);
+    },
+  });
+
+  const verifyMfaLoginMutation = useMutation({
+    mutationFn: verifyMfaLogin,
     onSuccess: (response) => {
       storeAccessToken(response.accessToken);
       queryClient.setQueryData(['auth', 'me', response.accessToken], response.user);
@@ -72,14 +106,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading:
         meQuery.isLoading ||
         loginMutation.isPending ||
+        verifyMfaLoginMutation.isPending ||
         registerMutation.isPending,
       isAuthenticated: Boolean(accessToken && meQuery.data),
       login: async (input) => {
-        await loginMutation.mutateAsync(input);
+        return loginMutation.mutateAsync(input);
+      },
+      verifyMfaLogin: async (input) => {
+        await verifyMfaLoginMutation.mutateAsync(input);
       },
       registerAgency: async (input) => {
         await registerMutation.mutateAsync(input);
       },
+      startMfaEnrollment: async () =>
+        startMfaEnrollment(accessToken ?? ''),
+      confirmMfaEnrollment: async (input) => {
+        const result = await confirmMfaEnrollment(accessToken ?? '', input);
+        await queryClient.invalidateQueries({ queryKey: ['auth'] });
+        return result;
+      },
+      regenerateMfaRecoveryCodes: async () =>
+        regenerateMfaRecoveryCodes(accessToken ?? ''),
       logout,
     }),
     [
@@ -88,11 +135,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       meQuery.data,
       meQuery.isLoading,
+      queryClient,
       registerMutation,
+      verifyMfaLoginMutation,
     ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function isMfaChallengeResponse(
+  response: LoginResponse,
+): response is MfaChallengeResponse {
+  return 'type' in response && response.type === 'MFA_REQUIRED';
 }
 
 export function useAuth() {

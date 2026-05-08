@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from '@/features/auth/protected-route';
 import { useAuth } from '@/features/auth/auth-provider';
+import { MfaSettings } from '@/features/auth/mfa-settings';
 import { AppNav } from '@/features/operations/app-nav';
 
 export default function DashboardPage() {
@@ -46,6 +47,9 @@ function DashboardContent() {
             agency-scoped APIs.
           </p>
         </article>
+        <div className="lg:col-span-3">
+          <MfaSettings />
+        </div>
       </section>
     </main>
   );

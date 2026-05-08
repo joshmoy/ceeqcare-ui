@@ -7,6 +7,7 @@ import { FormEvent, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 
 import { useAuth } from './auth-provider';
+import { MfaChallengeResponse } from './types';
 
 type Mode = 'login' | 'register';
 
@@ -14,6 +15,8 @@ export function AuthShell({ mode }: { mode: Mode }) {
   const router = useRouter();
   const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [mfaChallenge, setMfaChallenge] =
+    useState<MfaChallengeResponse | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,11 +26,16 @@ export function AuthShell({ mode }: { mode: Mode }) {
 
     try {
       if (mode === 'login') {
-        await auth.login({
+        const response = await auth.login({
           email: String(formData.get('email') ?? ''),
           password: String(formData.get('password') ?? ''),
           agencyId: optionalString(formData.get('agencyId')),
         });
+
+        if ('type' in response && response.type === 'MFA_REQUIRED') {
+          setMfaChallenge(response);
+          return;
+        }
       } else {
         await auth.registerAgency({
           agencyName: String(formData.get('agencyName') ?? ''),
@@ -44,6 +52,30 @@ export function AuthShell({ mode }: { mode: Mode }) {
         caughtError instanceof ApiError
           ? caughtError.message
           : 'Authentication failed. Please try again.',
+      );
+    }
+  }
+
+  async function handleMfaSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!mfaChallenge) {
+      return;
+    }
+
+    setError(null);
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      await auth.verifyMfaLogin({
+        challengeToken: mfaChallenge.challengeToken,
+        code: String(formData.get('code') ?? ''),
+      });
+      router.push('/dashboard');
+    } catch (caughtError: unknown) {
+      setError(
+        caughtError instanceof ApiError
+          ? caughtError.message
+          : 'MFA verification failed. Please try again.',
       );
     }
   }
@@ -71,19 +103,32 @@ export function AuthShell({ mode }: { mode: Mode }) {
         </div>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={mfaChallenge ? handleMfaSubmit : handleSubmit}
           className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl"
         >
           <h2 className="text-2xl font-semibold text-slate-950">
-            {mode === 'login' ? 'Sign in' : 'Register pilot agency'}
+            {mfaChallenge
+              ? 'Enter verification code'
+              : mode === 'login'
+                ? 'Sign in'
+                : 'Register pilot agency'}
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            {mode === 'login'
+            {mfaChallenge
+              ? `Use your authenticator app or a recovery code for ${mfaChallenge.email}.`
+              : mode === 'login'
               ? 'Use your agency account credentials.'
               : 'Create the first registered manager account for an agency.'}
           </p>
 
-          {mode === 'register' ? (
+          {mfaChallenge ? (
+            <Field
+              label="Authenticator or recovery code"
+              name="code"
+              required
+              helper="Recovery codes may be entered with or without spaces."
+            />
+          ) : mode === 'register' ? (
             <>
               <Field label="Agency name" name="agencyName" required />
               <Field label="CQC ID" name="cqcId" />
@@ -106,13 +151,15 @@ export function AuthShell({ mode }: { mode: Mode }) {
             </>
           )}
 
-          <Field
-            label="Password"
-            name="password"
-            required
-            type="password"
-            helper="Minimum 10 characters."
-          />
+          {!mfaChallenge ? (
+            <Field
+              label="Password"
+              name="password"
+              required
+              type="password"
+              helper="Minimum 10 characters."
+            />
+          ) : null}
 
           {error ? (
             <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -127,13 +174,26 @@ export function AuthShell({ mode }: { mode: Mode }) {
           >
             {auth.isLoading
               ? 'Please wait...'
-              : mode === 'login'
+              : mfaChallenge
+                ? 'Verify and sign in'
+                : mode === 'login'
                 ? 'Sign in'
                 : 'Create agency'}
           </button>
 
           <p className="mt-6 text-center text-sm text-slate-600">
-            {mode === 'login' ? (
+            {mfaChallenge ? (
+              <button
+                className="font-semibold text-blue-700"
+                onClick={() => {
+                  setMfaChallenge(null);
+                  setError(null);
+                }}
+                type="button"
+              >
+                Use a different account
+              </button>
+            ) : mode === 'login' ? (
               <>
                 Need to onboard a pilot agency?{' '}
                 <Link className="font-semibold text-blue-700" href="/register">
